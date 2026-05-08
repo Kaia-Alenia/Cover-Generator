@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alenia Studios | Cover Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-panel: #121212;
+            --accent-alenia: #8A2BE2; /* Púrpura Alenia */
+            --text-main: #ffffff;
+            --input-bg: #1e1e1e;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #0a0a0a;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        /* Panel Lateral Estilizado */
+        .controls {
+            width: 320px;
+            background: var(--bg-panel);
+            padding: 20px;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .controls h2 { 
+            margin: 0 0 10px 0; 
+            color: var(--accent-alenia); 
+            font-size: 1.1rem; 
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label { font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 600; }
+
+        input, select, textarea {
+            background: var(--input-bg);
+            border: 1px solid #333;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        input:focus { border-color: var(--accent-alenia); }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            background: var(--accent-alenia);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+
+        button:hover { filter: brightness(1.2); transform: translateY(-1px); }
+
+        /* Área de Trabajo */
+        .preview-area {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #1a1a1a 0%, #000 100%);
+            padding: 40px;
+            overflow: auto;
+        }
+
+        /* Canvas de Portada */
+        #capture-area {
+            width: 1000px;
+            height: 800px;
+            background-color: #000000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 6px solid #8A2BE2;
+            box-sizing: border-box;
+            position: relative;
+            flex-shrink: 0;
+            box-shadow: 0 0 50px rgba(0,0,0,1);
+        }
+
+        /* Efecto de Textura (Opcional) */
+        #capture-area::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        .title {
+            font-size: 90px;
+            color: #8A2BE2;
+            text-align: center;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            font-weight: 900;
+            line-height: 0.85;
+            z-index: 2;
+        }
+
+        .divider {
+            width: 60%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #8A2BE2, transparent);
+            margin: 40px 0;
+            z-index: 2;
+        }
+
+        .subtitle {
+            font-size: 28px;
+            color: #ffffff;
+            text-align: center;
+            margin: 0;
+            letter-spacing: 4px;
+            font-weight: 300;
+            z-index: 2;
+        }
+
+        .branding {
+            position: absolute;
+            bottom: 40px;
+            font-size: 20px;
+            color: #ffffff;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <h2>Cover Designer</h2>
+        
+        <div class="control-group">
+            <label>Título del Pack</label>
+            <textarea id="inTitle" rows="2" oninput="update()">VOID<br>ECHOES</textarea>
+        </div>
+
+        <div class="control-group">
+            <label>Subtítulo / Descripción</label>
+            <input type="text" id="inSub" value="16-BIT RETRO MUSIC COLLECTION" oninput="update()">
+        </div>
+
+        <div class="control-group">
+            <label>Créditos</label>
+            <input type="text" id="inBrand" value="ALENIA STUDIOS" oninput="update()">
+        </div>
+
+        <div class="color-grid">
+            <div class="control-group">
+                <label>Fondo</label>
+                <input type="color" id="colorBg" value="#000000" oninput="update()">
+            </div>
+            <div class="control-group">
+                <label>Borde/Título</label>
+                <input type="color" id="colorBorder" value="#8A2BE2" oninput="update()">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Color de Acento</label>
+            <input type="color" id="colorAccent" value="#ffffff" oninput="update()">
+        </div>
+
+        <div class="control-group">
+            <label>Formato de Salida</label>
+            <select id="exportSize" onchange="updatePreviewSize()">
+                <option value="1000|800">Standard Pack (1000x800)</option>
+                <option value="1280|720">Ci-en / Banner (1280x720)</option>
+                <option value="1920|1080">Full HD (1920x1080)</option>
+                <option value="1000|1000">Square (1000x1000)</option>
+            </select>
+        </div>
+
+        <button onclick="downloadImage()">Exportar Portada</button>
+    </div>
+
+    <div class="preview-area" id="scroll-container">
+        <div id="capture-area">
+            <h1 class="title" id="outTitle">VOID<br>ECHOES</h1>
+            <div class="divider" id="outDivider"></div>
+            <h2 class="subtitle" id="outSub">16-BIT RETRO MUSIC COLLECTION</h2>
+            <div class="branding" id="outBrand">ALENIA STUDIOS</div>
+        </div>
+    </div>
+
+    <script>
+        function update() {
+            document.getElementById('outTitle').innerHTML = document.getElementById('inTitle').value.replace(/\n/g, '<br>');
+            document.getElementById('outSub').innerText = document.getElementById('inSub').value;
+            document.getElementById('outBrand').innerText = document.getElementById('inBrand').value;
+
+            const bgColor = document.getElementById('colorBg').value;
+            const accentColor = document.getElementById('colorAccent').value;
+            const borderTitleColor = document.getElementById('colorBorder').value;
+
+            const cover = document.getElementById('capture-area');
+            cover.style.backgroundColor = bgColor;
+            cover.style.borderColor = borderTitleColor;
+
+            document.getElementById('outTitle').style.color = borderTitleColor;
+            document.getElementById('outSub').style.color = accentColor;
+            document.getElementById('outDivider').style.background = `linear-gradient(90deg, transparent, ${borderTitleColor}, transparent)`;
+        }
+
+        function updatePreviewSize() {
+            const area = document.getElementById('capture-area');
+            const size = document.getElementById('exportSize').value.split('|');
+            area.style.width = size[0] + "px";
+            area.style.height = size[1] + "px";
+            
+            // Auto-escala para que siempre sea visible en el editor
+            const container = document.getElementById('scroll-container');
+            const scale = Math.min((container.offsetWidth - 80) / size[0], (container.offsetHeight - 80) / size[1]);
+            area.style.transform = `scale(${Math.min(scale, 1)})`;
+        }
+
+        async function downloadImage() {
+            const area = document.getElementById('capture-area');
+            const originalTransform = area.style.transform;
+            
+            area.style.transform = "none";
+            
+            const canvas = await html2canvas(area, {
+                scale: 2,
+                backgroundColor: null,
+                useCORS: true
+            });
+
+            const link = document.createElement('a');
+            link.download = `Alenia_Cover_${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            
+            updatePreviewSize();
+        }
+
+        // Inicializar escala
+        window.onload = updatePreviewSize;
+        window.onresize = updatePreviewSize;
+    </script>
+</body>
+</html>
