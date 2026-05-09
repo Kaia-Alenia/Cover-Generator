@@ -44,4 +44,4 @@ You can copy, modify, and distribute the software, even for commercial purposes,
 
 ---
 
-**Developed with ❤️ by [Alenia Studios]((https://alenia-studios.itch.io/))**
+**Developed with ❤️ by KXLT for [Alenia Studios]((https://alenia-studios.itch.io/))**
